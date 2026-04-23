@@ -1,1 +1,2 @@
-labvars.auto.pkrvars.hcl
+ubuntu/ubuntu.pkrvars.hcl
+windows/windows.pkrvars.hcl

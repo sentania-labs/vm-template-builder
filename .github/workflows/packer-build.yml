@@ -45,3 +45,35 @@ jobs:
       - name: Clean workspace
         run: "rm -rf $GITHUB_WORKSPACE/*"
 
+  windows-build:
+    needs: packer-build
+    if: always() && needs.packer-build.result != 'cancelled'
+    runs-on: [self-hosted, packer]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Run `packer init`
+        working-directory: windows
+        run: "packer init ./windows.pkr.hcl"
+
+      - name: Build Windows Images
+        working-directory: windows
+        env:
+          VCENTER_USERNAME: ${{ vars.VCENTER_USERNAME }}
+          VCENTER_PASSWORD: ${{ secrets.VCENTER_PASSWORD }}
+          VCENTER_SERVER: ${{ vars.VCENTER_SERVER }}
+        run: |
+          packer build -force -parallel-builds=1 \
+            -var "vsphere_username=${VCENTER_USERNAME}" \
+            -var "vsphere_password=${VCENTER_PASSWORD}" \
+            -var "vsphere_server=${VCENTER_SERVER}" \
+            -var 'content_library_destination=vcf-lab-mgmt-contentlibrary' .
+
+      - name: Cleanup Packer cache
+        run: |
+          rm -rf ./.packer.d
+          rm -rf ~/.cache/packer
+
+      - name: Clean workspace
+        run: "rm -rf $GITHUB_WORKSPACE/*"
