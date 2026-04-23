@@ -31,9 +31,11 @@ When Scott manually selected the CDROM from the Boot Manager the second time aro
 3. **Shorten VMX boot delay** *(minor assist only)*
    Reduce any VMX-level POST/boot delay so the prompt appears sooner, giving option 2 more headroom. Not a fix on its own.
 
-**Status:** Open. Blocking all Win2025 build progress.
+**Status:** Open — remaster complete, awaiting Scott's upload and content library item name.
 
 **CI runs cancelled 2026-04-23:** Three in-progress/queued workflow runs (24835472648, 24836511704, 24836608259) cancelled manually — none would have progressed past this stall.
+
+**Remaster produced 2026-04-23:** `sentania-lab-toolkit/scripts/remaster-windows-iso.ps1` (commit d72d773) ran against the source eval ISO. `efisys_noprompt.bin` was present in the source — no injection needed. Output: `/home/scott/pka/tmp/server2025-remastered.iso` (5.6 GB). Scott will verify and upload to content library. Once he provides the content library item name, Job 2 (retarget Packer to the remastered ISO) will be dispatched.
 
 ---
 
