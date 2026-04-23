@@ -4,17 +4,25 @@
 
 **Symptom:** After Packer boots the VM, the EFI Boot Manager appears with "Boot normally" highlighted and the system stalls. The installer never launches. The boot menu shows entries for EFI Virtual disk, three EFI VMware Virtual IDE CDROM entries, EFI Network, and setup/reset/shutdown options — but nothing auto-boots from the CDROMs.
 
-**Likely causes to investigate:**
+**Manual repro (2026-04-23):** Scott hand-created a Win2025 VM outside Packer — same EFI Boot Manager stall. Manually selected the CDROM from the boot menu and the ISO booted fine, installation started normally. This rules out the ISO as the problem and confirms the fault is in EFI boot order: firmware picks "EFI Virtual disk (0.0)" first, finds nothing bootable, drops to Boot Manager and waits instead of falling through to the next device.
 
-1. **ISO not EFI-bootable as attached** — Win2025 ISO must expose `efi/boot/bootx64.efi` to the firmware. If the content library item or the vsphere-iso CD attachment strips the EFI boot partition, the firmware finds no bootable image on the CDROMs and falls back to the Boot Manager.
-2. **Boot order: virtual disk before CDROMs** — If the VMX/Packer config puts the (empty) virtual disk first in EFI boot order, firmware tries it, finds nothing, and lands in the Boot Manager rather than falling through to the CDROM.
-3. **Packer boot_command / boot_wait mismatch** — The config may assume an auto-boot that isn't happening. May need an explicit keystroke in boot_command to select the CDROM entry from the EFI Boot Manager menu.
-4. **"Press any key to boot from CD" prompt** — Win2025 EFI media shows this prompt with a short timeout. If boot_wait is too long or boot_command doesn't send a key during the window, the prompt expires and the system drops to the Boot Manager.
+**Root cause: EFI boot order puts empty virtual disk before CDROMs.**
+
+**~~Ruled out:~~** ~~ISO not EFI-bootable~~ — confirmed bootable when manually selected.
+
+**Remaining suspects / fix candidates:**
+
+1. **Boot order in Packer/VMX config** — put CDROM ahead of the virtual disk. VMX options to try:
+   - `bios.bootorder = "cdrom,hdd"` (legacy BIOS setting, may be honoured by EFI firmware in some ESXi versions)
+   - `efi.bootorder` or `uefi.bootorder` VMX key — force CDROM first
+   - Check what `vsphere-iso` exposes for boot order; may need `configuration_parameters` in the Packer HCL to inject VMX keys directly.
+2. **Defer disk attachment until post-boot** — some Packer templates attach the boot disk only after the installer is running, so the EFI firmware sees only the CDROM at first power-on. Worth checking if `vsphere-iso` supports this.
+3. **boot_command to navigate Boot Manager** — if boot order can't be forced, send keystrokes in `boot_command` to select the CDROM entry from the EFI Boot Manager menu before the timeout expires.
 
 **Fix direction:**
-- Confirm `firmware = "efi"` is set and that boot order has CDROMs ahead of the virtual disk in Packer/VMX config.
-- Verify the ISO item in the content library is a standard Win2025 ISO with an intact EFI boot partition (check for `efi/boot/bootx64.efi`).
-- Revisit `boot_wait` and `boot_command` — Win2025 may need a key sent during the "Press any key" window immediately after BIOS/EFI hands off to the CDROM.
+- Start with boot order: add VMX `efi.bootorder` / `uefi.bootorder` override via Packer `configuration_parameters` to put CDROM first.
+- If that doesn't work, investigate deferred disk attachment.
+- `boot_command` workaround is a last resort — fragile and timing-dependent.
 
 **Status:** Open. Blocking all Win2025 build progress.
 
