@@ -47,7 +47,7 @@ variable "vsphere_datacenter" {
   default = ""
 }
 
-variable "vsphere_host" {
+variable "vsphere_cluster" {
   type    = string
   default = ""
 }
