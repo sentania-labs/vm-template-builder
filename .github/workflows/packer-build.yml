@@ -30,7 +30,7 @@ jobs:
           VCENTER_PASSWORD: ${{ secrets.VCENTER_PASSWORD }}
           VCENTER_SERVER: ${{ vars.VCENTER_SERVER }}
         run: |
-          packer build -force \
+          packer build -force -parallel-builds=1 \
             -var-file="ubuntu.pkrvars.hcl" \
             -var "vsphere_username=${VCENTER_USERNAME}" \
             -var "vsphere_password=${VCENTER_PASSWORD}" \
