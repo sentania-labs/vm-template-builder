@@ -1,32 +1,39 @@
 # Windows Build Notes
 
-## 2026-04-23 — CURRENT BLOCKER: Win2025 VM drops to EFI Boot Manager, installer never starts
+## 2026-04-23 — CURRENT BLOCKER: "Press any key to boot from CD or DVD..." prompt times out, drops to Boot Manager
 
-**Symptom:** After Packer boots the VM, the EFI Boot Manager appears with "Boot normally" highlighted and the system stalls. The installer never launches. The boot menu shows entries for EFI Virtual disk, three EFI VMware Virtual IDE CDROM entries, EFI Network, and setup/reset/shutdown options — but nothing auto-boots from the CDROMs.
+**Symptom:** After Packer boots the VM, the EFI firmware tries the CDROM first (boot order is fine) and displays the standard Windows "Press any key to boot from CD or DVD..." prompt. No keypress is sent in time → prompt times out → EFI drops to the Boot Manager with "Boot normally" highlighted. Installer never launches.
 
-**Manual repro (2026-04-23):** Scott hand-created a Win2025 VM outside Packer — same EFI Boot Manager stall. Manually selected the CDROM from the boot menu and the ISO booted fine, installation started normally. This rules out the ISO as the problem and confirms the fault is in EFI boot order: firmware picks "EFI Virtual disk (0.0)" first, finds nothing bootable, drops to Boot Manager and waits instead of falling through to the next device.
+When Scott manually selected the CDROM from the Boot Manager the second time around, the prompt didn't appear again — the ISO auto-booted because the EFI boot path was now being invoked directly, skipping the initial `efisys.bin` prompt.
 
-**Root cause: EFI boot order puts empty virtual disk before CDROMs.**
+**Root cause: the Win2025 ISO uses `efisys.bin` (prompt version) as its EFI boot image.** Scott's ISO rehash preserved this prompt-version boot image. Packer's `boot_command` isn't firing a keypress during the prompt window, so the timeout expires every time.
 
-**~~Ruled out:~~** ~~ISO not EFI-bootable~~ — confirmed bootable when manually selected.
+**~~Prior theory (ruled out):~~** ~~EFI boot order puts empty virtual disk before CDROMs~~ — CDROM is tried first; boot order is not the issue.
 
-**Remaining suspects / fix candidates:**
+**Fix candidates, in priority order:**
 
-1. **Boot order in Packer/VMX config** — put CDROM ahead of the virtual disk. VMX options to try:
-   - `bios.bootorder = "cdrom,hdd"` (legacy BIOS setting, may be honoured by EFI firmware in some ESXi versions)
-   - `efi.bootorder` or `uefi.bootorder` VMX key — force CDROM first
-   - Check what `vsphere-iso` exposes for boot order; may need `configuration_parameters` in the Packer HCL to inject VMX keys directly.
-2. **Defer disk attachment until post-boot** — some Packer templates attach the boot disk only after the installer is running, so the EFI firmware sees only the CDROM at first power-on. Worth checking if `vsphere-iso` supports this.
-3. **boot_command to navigate Boot Manager** — if boot order can't be forced, send keystrokes in `boot_command` to select the CDROM entry from the EFI Boot Manager menu before the timeout expires.
+1. **Rebuild the ISO with `efisys_noprompt.bin`** *(recommended — eliminates the race entirely)*
+   Windows ADK ships both variants:
+   - `efisys.bin` — "Press any key..." prompt (what the current ISO uses)
+   - `efisys_noprompt.bin` — auto-boots without prompt
 
-**Fix direction:**
-- Start with boot order: add VMX `efi.bootorder` / `uefi.bootorder` override via Packer `configuration_parameters` to put CDROM first.
-- If that doesn't work, investigate deferred disk attachment.
-- `boot_command` workaround is a last resort — fragile and timing-dependent.
+   Rebuild with `oscdimg`:
+   ```
+   oscdimg -m -o -u2 -udfver102 \
+     -bootdata:2#p0,e,b<path>\etfsboot.com#pEF,e,b<path>\efi\microsoft\boot\efisys_noprompt.bin \
+     <source-dir> <output.iso>
+   ```
+   Upload the rebuilt ISO to the content library item `server2025-iso`. No Packer config changes needed.
+
+2. **Fix `boot_command` to send a keypress before the prompt times out** *(fragile — timing-sensitive)*
+   Set a short `boot_wait` so Packer connects to the VM console quickly, then open `boot_command` with something like `["<enter>"]` or `["<spacebar>"]` to fire during the prompt window. Prompt timeout is typically 5–10 seconds; `boot_wait` needs to be short enough to beat it. Sensitive to host load.
+
+3. **Shorten VMX boot delay** *(minor assist only)*
+   Reduce any VMX-level POST/boot delay so the prompt appears sooner, giving option 2 more headroom. Not a fix on its own.
 
 **Status:** Open. Blocking all Win2025 build progress.
 
-**CI runs cancelled 2026-04-23:** Three in-progress/queued workflow runs (24835472648, 24836511704, 24836608259) cancelled manually — none would have progressed past this EFI boot stall, and the vmxnet3 issue would have caused a hang even if they had.
+**CI runs cancelled 2026-04-23:** Three in-progress/queued workflow runs (24835472648, 24836511704, 24836608259) cancelled manually — none would have progressed past this stall.
 
 ---
 
