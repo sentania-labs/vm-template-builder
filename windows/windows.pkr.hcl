@@ -46,9 +46,10 @@ source "vsphere-iso" "windows2025-bare" {
   reattach_cdroms = 2
   remove_cdrom    = "true"
 
-  cd_content = {
-    "/autounattend.xml" = file("./autounattend/autounattend.xml")
-  }
+  cd_files = [
+    "./autounattend/autounattend.xml",
+    "./autounattend/bootstrap.ps1",
+  ]
   cd_label = "PACKER"
 
   network_adapters {
@@ -109,9 +110,10 @@ source "vsphere-iso" "windows2025-cbinit" {
   reattach_cdroms = 2
   remove_cdrom    = "true"
 
-  cd_content = {
-    "/autounattend.xml" = file("./autounattend/autounattend.xml")
-  }
+  cd_files = [
+    "./autounattend/autounattend.xml",
+    "./autounattend/bootstrap.ps1",
+  ]
   cd_label = "PACKER"
 
   network_adapters {
@@ -145,9 +147,10 @@ source "vsphere-iso" "windows2025-cbinit" {
 }
 
 build {
+  # cbinit is parked — source block retained but not in active sources.
+  # See windows/NOTES.md.
   sources = [
     "source.vsphere-iso.windows2025-bare",
-    "source.vsphere-iso.windows2025-cbinit",
   ]
 
   provisioner "powershell" {

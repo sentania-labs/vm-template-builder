@@ -1,7 +1,14 @@
 # Install VMware Tools from the secondary CD that Packer attached
 # ([] /vmimages/tools-isoimages/windows.iso on the ESXi host).
+# Normally bootstrap.ps1 (first logon) has already installed Tools;
+# this provisioner is a safety net for images where that didn't happen.
 
 $ErrorActionPreference = 'Stop'
+
+if (Get-Service -Name VMTools -ErrorAction SilentlyContinue) {
+    Write-Host "VMware Tools already installed (service VMTools present) — skipping."
+    return
+}
 
 $setup = Get-CimInstance -ClassName Win32_LogicalDisk |
     Where-Object { $_.DriveType -eq 5 } |

@@ -151,28 +151,13 @@
         </SynchronousCommand>
         <SynchronousCommand wcm:action="add">
           <Order>2</Order>
-          <CommandLine>cmd.exe /c winrm quickconfig -q</CommandLine>
-          <Description>Enable WinRM service + listener</Description>
+          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$d=(Get-CimInstance Win32_LogicalDisk | Where-Object { $_.VolumeName -eq 'PACKER' }).DeviceID; if ($d) { Copy-Item -Path (Join-Path $d 'bootstrap.ps1') -Destination 'C:\Windows\Temp\bootstrap.ps1' -Force }"</CommandLine>
+          <Description>Copy bootstrap.ps1 off the Packer CD</Description>
         </SynchronousCommand>
         <SynchronousCommand wcm:action="add">
           <Order>3</Order>
-          <CommandLine>cmd.exe /c winrm set winrm/config/service @{AllowUnencrypted=&quot;true&quot;}</CommandLine>
-          <Description>Allow unencrypted WinRM traffic for the build window</Description>
-        </SynchronousCommand>
-        <SynchronousCommand wcm:action="add">
-          <Order>4</Order>
-          <CommandLine>cmd.exe /c winrm set winrm/config/service/auth @{Basic=&quot;true&quot;}</CommandLine>
-          <Description>Allow Basic auth on WinRM</Description>
-        </SynchronousCommand>
-        <SynchronousCommand wcm:action="add">
-          <Order>5</Order>
-          <CommandLine>cmd.exe /c netsh advfirewall firewall set rule group=&quot;Windows Remote Management&quot; new enable=yes</CommandLine>
-          <Description>Open firewall for WinRM</Description>
-        </SynchronousCommand>
-        <SynchronousCommand wcm:action="add">
-          <Order>6</Order>
-          <CommandLine>cmd.exe /c sc.exe config winrm start= auto</CommandLine>
-          <Description>Ensure WinRM starts automatically</Description>
+          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Windows\Temp\bootstrap.ps1"</CommandLine>
+          <Description>Install VMware Tools, enable WinRM, open firewall</Description>
         </SynchronousCommand>
       </FirstLogonCommands>
       <TimeZone>Eastern Standard Time</TimeZone>
