@@ -31,7 +31,7 @@ When Scott manually selected the CDROM from the Boot Manager the second time aro
 3. **Shorten VMX boot delay** *(minor assist only)*
    Reduce any VMX-level POST/boot delay so the prompt appears sooner, giving option 2 more headroom. Not a fix on its own.
 
-**Status:** RESOLVED. windows2025-bare retargeted to content library item server2025-remastered (remastered ISO with efisys_noprompt.bin, no press-any-key prompt). Commit: <this commit hash>.
+**Status:** RESOLVED. windows2025-bare retargeted to content library item server2025-remastered (remastered ISO with efisys_noprompt.bin, no press-any-key prompt). Commit: b596dc8.
 
 **windows2025-cbinit variant is parked** — not being actively built. Source block retained in windows.pkr.hcl but cbinit is out of scope for the current build sprint.
 
