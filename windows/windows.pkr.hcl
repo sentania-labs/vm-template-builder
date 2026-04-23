@@ -1,5 +1,5 @@
 packer {
-  required_version = ">= 1.11.2"
+  required_version = ">= 1.11.0, < 1.12.0"
   required_plugins {
     vsphere = {
       version = ">= 1.4.2"
