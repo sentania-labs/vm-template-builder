@@ -1,4 +1,3 @@
-
 # vsphere datacenter name
 vsphere_datacenter      = "vcf-lab-mgmt-dc01"
 
@@ -6,7 +5,7 @@ vsphere_datacenter      = "vcf-lab-mgmt-dc01"
 vsphere_cluster            = "vcf-lab-mgmt-cl01"
 
 # vsphere network
-vsphere_network         = "mgmt vm"
+vsphere_network         = "vcf-lab-mgmt-cl01-vds01-pg-vm-mgmt"
 
 # vsphere datastore
 vsphere_datastore       = "vcf-lab-mgmt-cl01-vsan"
