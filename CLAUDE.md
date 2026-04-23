@@ -36,6 +36,7 @@ Convention: `<os-dir>/README.md` for the OS family overview; `<os-dir>/<variant>
 | Guest OS | Ubuntu 22.04 / 24.04 LTS; Windows Server 2025 |
 | First-boot config | cloud-init (Linux); cloudbase-init (Windows cloudbase-init variant); none (bare Windows) |
 | Unattended Windows install | autounattend.xml served via CD or HTTP during boot |
+| Windows provisioner transport | WinRM — must be enabled during OS install via autounattend.xml (or equivalent) so Packer can connect post-boot. Firewall rules, service config, and auth mode are template-author's call; the hard requirement is that WinRM is reachable before the first provisioner step runs. Packer does not use SSH on Windows. |
 | Credentials | Variables files (`.pkrvars.hcl`) — see Secrets Policy below |
 | Content library sync | `scripts/sync_content_libraries.py` / `sync-contentlibrary.ps1` |
 | CA trust | `files/sentania Lab Root 2.crt` — internal CA root for vSphere TLS |
@@ -90,19 +91,27 @@ All real secrets are provided via GitHub Actions secrets — never committed to 
 - Content library tokens or API keys
 - Anything that grants access to production or lab infrastructure
 
-**One committed exception: default image user passwords.**
+**One committed exception: lab-standard default accounts.**
 
-The lab-standard default credentials for built templates are committed in `*.auto.pkrvars.hcl` files because they're lab policy, not operational secrets:
+These are baked into every template by design and committed in `*.auto.pkrvars.hcl` or provisioner scripts. They're lab policy, not operational secrets — they belong to the image, not the environment.
 
-- Default image user: `labuser` / `VMware123!VMware123!`
-- Default Windows local Administrator password during build: `VMware123!VMware123!`
+### Built-in default accounts
 
-These are baked into every template by design. They are the same across all images. Committing them is intentional — they belong to the image, not the environment.
+Set during unattended OS install; not created by Packer provisioners.
+
+- **Linux root**: `VMware123!VMware123!` — SSH is disabled for root. Password exists for local/console recovery only.
+- **Windows local Administrator**: `VMware123!VMware123!`
+
+### Provisioned users
+
+Created during the build by Packer provisioners.
+
+- **`labuser`**: `VMware123!VMware123!` — passwordless sudo on Linux; member of the local Administrators group on Windows.
 
 **Rules:**
 - If you see a vSphere password, SSH key, or API token and feel tempted to commit it, don't. Pass it through GitHub Actions.
-- If the default user password needs to change, that's a policy discussion — not a routine commit.
-- Committed credential files must only ever contain the default user password and username. Nothing else.
+- If the default account passwords need to change, that's a policy discussion — not a routine commit.
+- Committed credential files must only ever contain the default account credentials listed above. Nothing else.
 
 ## Development Guidelines
 
