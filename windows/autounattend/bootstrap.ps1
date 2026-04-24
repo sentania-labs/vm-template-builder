@@ -3,6 +3,7 @@
 # leaves breadcrumbs in C:\Windows\Temp so a failed run can be diagnosed
 # from vSphere console even if Packer never connects.
 
+" bootstrap-started" | Set-Content -Path C:\Windows\Temp\bootstrap-started.txt
 $ErrorActionPreference = 'Continue'
 $log = 'C:\Windows\Temp\bootstrap.log'
 function Log($msg) {

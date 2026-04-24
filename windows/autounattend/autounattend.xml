@@ -93,6 +93,16 @@
           <Path>reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /v LocalAccountTokenFilterPolicy /t REG_DWORD /d 1 /f</Path>
           <Description>Allow remote admin tokens for WinRM</Description>
         </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <Path>cmd.exe /c for %d in (D E F G H I J) do if exist %d:\bootstrap.ps1 copy /y %d:\bootstrap.ps1 C:\Windows\Temp\bootstrap.ps1</Path>
+          <Description>Copy bootstrap.ps1 from PACKER CD while CD is guaranteed mounted</Description>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>3</Order>
+          <Path>cmd.exe /c echo %DATE% %TIME% specialize-copy-bootstrap attempted &gt; C:\Windows\Temp\specialize-copy.log</Path>
+          <Description>Breadcrumb - specialize pass ran</Description>
+        </RunSynchronousCommand>
       </RunSynchronous>
     </component>
   </settings>
@@ -151,13 +161,8 @@
         </SynchronousCommand>
         <SynchronousCommand wcm:action="add">
           <Order>2</Order>
-          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$d=(Get-CimInstance Win32_LogicalDisk | Where-Object { $_.VolumeName -eq 'PACKER' }).DeviceID; if ($d) { Copy-Item -Path (Join-Path $d 'bootstrap.ps1') -Destination 'C:\Windows\Temp\bootstrap.ps1' -Force }"</CommandLine>
-          <Description>Copy bootstrap.ps1 off the Packer CD</Description>
-        </SynchronousCommand>
-        <SynchronousCommand wcm:action="add">
-          <Order>3</Order>
-          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Windows\Temp\bootstrap.ps1"</CommandLine>
-          <Description>Install VMware Tools, enable WinRM, open firewall</Description>
+          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "if (-not (Test-Path 'C:\Windows\Temp\bootstrap.ps1')) { 'BOOTSTRAP MISSING - specialize copy failed' | Set-Content C:\Windows\Temp\bootstrap-missing.log } else { &amp; 'C:\Windows\Temp\bootstrap.ps1' }"</CommandLine>
+          <Description>Run bootstrap.ps1 (guard: logs bootstrap-missing.log if file absent)</Description>
         </SynchronousCommand>
       </FirstLogonCommands>
       <TimeZone>Eastern Standard Time</TimeZone>
