@@ -14,6 +14,14 @@ Planned:
 - **Windows Server 2025 (cloudbase-init)** (`windows/`) — `vsphere-iso` builder, autounattend.xml for unattended install, cloudbase-init MSI + config for first-boot automation
 - **Windows Server 2025 (bare)** (`windows/`) — same builder, autounattend.xml, no cloudbase-init; clean base image for workloads that don't need it
 
+## Charter
+
+This workspace is software. The "What this is" / product
+scope above is the charter. Software authors don't touch
+infrastructure outside their charter — even with credentials
+available. For work that needs out-of-charter access, use a
+sanctioned cross-system channel.
+
 ## Image Catalog and Documentation
 
 Every image source gets a documentation file alongside it. When adding or modifying a build, the doc is a first-class deliverable — not optional, not deferred.
