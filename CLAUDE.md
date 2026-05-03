@@ -1,4 +1,4 @@
-# CLAUDE.md — packer-image-build
+# CLAUDE.md — vm-template-builder
 
 Packer-based VM image builds for Scott's homelab. Builds Ubuntu and Windows guest OS templates and publishes them to vSphere content libraries. That's the whole scope.
 
@@ -21,6 +21,20 @@ scope above is the charter. Software authors don't touch
 infrastructure outside their charter — even with credentials
 available. For work that needs out-of-charter access, use a
 sanctioned cross-system channel.
+
+## Scott² integration
+
+Registered as the `vm-template-builder` provider in scott.2.
+Workspace path: `~/providers/vm-template-builder/`.
+
+- `capabilities.yml` declares `build_vm_template` (allowed_callers:
+  `lab-admin`, requires_approval: true).
+- `capability-deps.yml` is empty — this workspace produces artifacts
+  and does not consume other peers' capabilities.
+- Contract: `contracts/build_vm_template.md`.
+- Cross-workspace requests arrive via the orchestrator queue; do not
+  invoke peers directly. Routing spec lives in
+  `~/scott.2/docs/workspace-readiness-guide.md`.
 
 ## Image Catalog and Documentation
 
@@ -73,7 +87,7 @@ packer-image-build/
 
 1. **Packer is the build tool.** No switching to other image-build systems (cloud-init-only, Ansible, etc.).
 2. **Target is Scott's private vSphere lab.** No cloud provider paths (AWS AMI, Azure VHD, GCP image). Not the goal.
-3. **Single responsibility.** This repo builds images. It does not provision VMs, deploy applications, or manage host configuration. That work belongs in `sentania-lab-toolkit` (Navani's domain).
+3. **Single responsibility.** This repo builds images. It does not provision VMs, deploy applications, or manage host configuration. That work belongs in `lab-admin` (Navani's domain).
 4. **Credentials never in code.** Sensitive values (`vsphere_password`, API tokens) go in `.pkrvars.hcl` files that are gitignored, or are injected at build time via GitHub Actions secrets. Never commit real operational credentials. See Secrets Policy below for the one exception.
 5. **`insecure_connection = true` is temporary.** The internal CA cert is in `files/` — the long-term intent is proper TLS verification. Don't remove the CA cert file.
 
@@ -131,7 +145,7 @@ Created during the build by Packer provisioners.
 
 ## What Claude Should NOT Do
 
-- **Modify lab hosts directly.** SSH access, host config, service management — that's `sentania-lab-toolkit` / Navani territory.
+- **Modify lab hosts directly.** SSH access, host config, service management — that's `lab-admin` / Navani territory.
 - **Deploy built images.** Building is this repo's job. Deploying the resulting templates is downstream.
 - **Push changes to other workspaces.** Stay in lane.
 - **Commit credential files.** If a `.pkrvars.hcl` or `.env` file contains real values, it must stay gitignored.
@@ -139,7 +153,7 @@ Created during the build by Packer provisioners.
 
 ## Reference Documents
 
-_Add as the repo matures. Candidates: vSphere content library target reference, cloud-init template docs, internal CA issuance procedure (tracked as a gap in manalog's CLAUDE.md — Navani should document this in sentania-lab-toolkit)._
+_Add as the repo matures. Candidates: vSphere content library target reference, cloud-init template docs, internal CA issuance procedure (tracked as a gap in manalog's CLAUDE.md — Navani should document this in lab-admin)._
 
 ## Code Review Protocol
 
