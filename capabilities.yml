@@ -1,0 +1,6 @@
+provides:
+  - name: build_vm_template
+    contract: contracts/build_vm_template.md
+    authorization:
+      allowed_callers: [lab-admin]
+      requires_approval: true

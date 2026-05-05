@@ -37,7 +37,7 @@ When Scott manually selected the CDROM from the Boot Manager the second time aro
 
 **CI runs cancelled 2026-04-23:** Three in-progress/queued workflow runs (24835472648, 24836511704, 24836608259) cancelled manually — none would have progressed past this stall.
 
-**Remaster produced 2026-04-23:** `sentania-lab-toolkit/scripts/remaster-windows-iso.ps1` (commit d72d773) ran against the source eval ISO. `efisys_noprompt.bin` was present in the source — no injection needed. Output: `/home/scott/pka/tmp/server2025-remastered.iso` (5.6 GB). Scott will verify and upload to content library. Once he provides the content library item name, Job 2 (retarget Packer to the remastered ISO) will be dispatched.
+**Remaster produced 2026-04-23:** A remaster utility (run out of band, not in this repo) produced a 5.6 GB ISO with `efisys_noprompt.bin` already present in the source — no injection needed. Output was uploaded to the content library as `server2025-remastered`, which is now the source for `windows2025-bare`.
 
 ---
 
