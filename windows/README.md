@@ -1,14 +1,13 @@
 # windows/ — Windows Server 2025 templates
 
-Packer definitions for two Server 2025 templates published to the
+Packer definition for a Server 2025 template published to the
 `vcf-lab-mgmt-contentlibrary` on `vcf-lab-vcenter-mgmt.int.sentania.net`.
 
-## Variants
+## Variant
 
 | Source | Published name | First-boot | Purpose |
 |---|---|---|---|
-| `vsphere-iso.windows2025-bare` | `windows2025-bare` | None | Clean base image for workloads that don't need guest customization. See [bare.md](bare.md). |
-| `vsphere-iso.windows2025-cbinit` | `windows2025-cbinit` | Cloudbase-Init | VKS guest customization via VCF Automation 9 All-apps. See [cloudbase-init.md](cloudbase-init.md). |
+| `vsphere-iso.windows2025-bare` | `windows2025-bare` | None | Clean base image. See [bare.md](bare.md). |
 
 ## Common properties
 
@@ -59,5 +58,4 @@ Packer definitions for two Server 2025 templates published to the
 
 Built by the `windows-build` job in
 `.github/workflows/packer-build.yml`. The job runs after the Ubuntu job
-completes (to avoid content-library OVF-import races) and builds both
-sources serially with `-parallel-builds=1`.
+completes (to avoid content-library OVF-import races).

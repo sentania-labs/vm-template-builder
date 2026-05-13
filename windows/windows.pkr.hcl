@@ -8,13 +8,6 @@ packer {
   }
 }
 
-locals {
-  iso_paths = [
-    "${var.content_library_destination}/${var.windows_iso_path}",
-    var.windows_tools_iso_path,
-  ]
-}
-
 source "vsphere-iso" "windows2025-bare" {
 
   vcenter_server      = var.vsphere_server
@@ -87,76 +80,7 @@ source "vsphere-iso" "windows2025-bare" {
   }
 }
 
-source "vsphere-iso" "windows2025-cbinit" {
-
-  vcenter_server      = var.vsphere_server
-  cluster             = var.vsphere_cluster
-  username            = var.vsphere_username
-  password            = var.vsphere_password
-  insecure_connection = "true"
-  datacenter          = var.vsphere_datacenter
-  datastore           = var.vsphere_datastore
-
-  content_library_destination {
-    destroy = var.library_vm_destroy
-    library = var.content_library_destination
-    name    = "windows2025-cbinit"
-    ovf     = var.ovf
-  }
-
-  CPUs                 = var.cpu_num
-  RAM                  = var.mem_size
-  RAM_reserve_all      = true
-  firmware             = "efi-secure"
-  guest_os_type        = "windows2019srv_64Guest"
-  disk_controller_type = ["pvscsi"]
-
-  iso_paths       = local.iso_paths
-  reattach_cdroms = 2
-  remove_cdrom    = "true"
-
-  cd_files = [
-    "./autounattend/autounattend.xml",
-    "./autounattend/bootstrap.ps1",
-  ]
-  cd_label = "PACKER"
-
-  # vmxnet3 + pvscsi drivers staged on A: for windowsPE DriverPaths injection.
-  floppy_dirs = ["./drivers"]
-
-  network_adapters {
-    network      = var.vsphere_network
-    network_card = "vmxnet3"
-  }
-
-  storage {
-    disk_size             = var.disk_size
-    disk_thin_provisioned = true
-  }
-
-  vm_name             = "windows2025-cbinit-template"
-  convert_to_template = "true"
-
-  communicator   = "winrm"
-  winrm_username = var.winrm_username
-  winrm_password = var.winrm_password
-  winrm_port     = 5985
-  winrm_timeout  = "60m"
-  winrm_use_ssl  = false
-  winrm_insecure = true
-
-  boot_order        = "disk,cdrom"
-  boot_wait         = "2s"
-  shutdown_timeout  = "30m"
-
-  configuration_parameters = {
-    "disk.EnableUUID" = "true"
-  }
-}
-
 build {
-  # cbinit is parked — source block retained but not in active sources.
-  # See windows/NOTES.md.
   sources = [
     "source.vsphere-iso.windows2025-bare",
   ]
@@ -204,27 +128,8 @@ build {
     restart_timeout = "30m"
   }
 
-  # cbinit-only: install cloudbase-init and stage its configs.
-  provisioner "powershell" {
-    only   = ["vsphere-iso.windows2025-cbinit"]
-    script = "./setup/40-install-cbinit.ps1"
-  }
-
-  provisioner "powershell" {
-    only   = ["vsphere-iso.windows2025-cbinit"]
-    script = "./setup/45-configure-cbinit.ps1"
-  }
-
-  # Upload the per-variant sysprep unattend that 90-sysprep.ps1 hands to sysprep.
   provisioner "file" {
-    only        = ["vsphere-iso.windows2025-bare"]
     source      = "./sysprep/unattend-bare.xml"
-    destination = "C:\\Windows\\Temp\\unattend.xml"
-  }
-
-  provisioner "file" {
-    only        = ["vsphere-iso.windows2025-cbinit"]
-    source      = "./sysprep/unattend-cbinit.xml"
     destination = "C:\\Windows\\Temp\\unattend.xml"
   }
 
