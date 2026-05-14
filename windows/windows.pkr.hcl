@@ -41,14 +41,9 @@ source "vsphere-iso" "windows2025-bare" {
 
   cd_files = [
     "./autounattend/autounattend.xml",
-    "./autounattend/bootstrap.ps1",
+    "./autounattend/install-vmtools.ps1",
+    "./autounattend/init-winrm.ps1",
   ]
-  cd_label = "PACKER"
-
-  # vmxnet3 + pvscsi drivers staged on A: for windowsPE DriverPaths injection.
-  # WS2025 install media lacks vmxnet3 — without this the NIC never gets an IP
-  # and Packer hangs at the WinRM IP-wait.
-  floppy_dirs = ["./drivers"]
 
   network_adapters {
     network      = var.vsphere_network
