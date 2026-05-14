@@ -106,6 +106,7 @@ build {
     timeout           = "2h"
     elevated_user     = "labuser"
     elevated_password = "VMware123!VMware123!"
+    valid_exit_codes  = [0, 267014]
   }
 
   provisioner "windows-restart" {
@@ -117,6 +118,7 @@ build {
     timeout           = "2h"
     elevated_user     = "labuser"
     elevated_password = "VMware123!VMware123!"
+    valid_exit_codes  = [0, 267014]
   }
 
   provisioner "windows-restart" {
