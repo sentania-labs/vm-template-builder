@@ -6,7 +6,7 @@
 $ErrorActionPreference = 'Stop'
 
 if (Get-Service -Name VMTools -ErrorAction SilentlyContinue) {
-    Write-Host "VMware Tools already installed (service VMTools present) — skipping."
+    Write-Host "VMware Tools already installed (service VMTools present) - skipping."
     return
 }
 

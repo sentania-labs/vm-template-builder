@@ -24,6 +24,6 @@ if (-not $updates) {
 Write-Host ("Installing {0} updates..." -f $updates.Count)
 Install-WindowsUpdate -AcceptAll -IgnoreReboot -MicrosoftUpdate -Verbose | Out-Null
 
-# Never fail the provisioner — a reboot loop or transient KB miss is expected
+# Never fail the provisioner - a reboot loop or transient KB miss is expected
 # between passes. The next windows-restart + second run picks up the rest.
 exit 0

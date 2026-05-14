@@ -14,6 +14,6 @@ Import-Certificate -FilePath $certPath -CertStoreLocation Cert:\LocalMachine\Roo
 $installed = Get-ChildItem Cert:\LocalMachine\Root |
     Where-Object { $_.Subject -match 'sentania Lab Root 2' }
 if (-not $installed) {
-    throw "CA cert import failed — not found in Cert:\LocalMachine\Root"
+    throw "CA cert import failed - not found in Cert:\LocalMachine\Root"
 }
 Write-Host "Installed CA: $($installed.Subject)"
