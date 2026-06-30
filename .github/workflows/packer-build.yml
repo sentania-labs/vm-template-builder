@@ -13,10 +13,11 @@ on:
 
 jobs:
   packer-build:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, packer]  # Ensure your self-hosted runner has Packer installed
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
 
       - name: Run `packer init`
         working-directory: ubuntu
@@ -47,11 +48,11 @@ jobs:
 
   windows-build:
     needs: packer-build
-    if: always() && needs.packer-build.result != 'cancelled'
+    if: (always() && needs.packer-build.result != 'cancelled') && (github.event.pull_request.head.repo.full_name == github.repository || github.event_name != 'pull_request')
     runs-on: [self-hosted, packer]
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
 
       - name: Run `packer init`
         working-directory: windows
