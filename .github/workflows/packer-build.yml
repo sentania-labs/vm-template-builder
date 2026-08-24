@@ -13,7 +13,7 @@ on:
 
 jobs:
   packer-build:
-    runs-on: [self-hosted, packer]  # Ensure your self-hosted runner has Packer installed
+    runs-on: lab
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -48,7 +48,7 @@ jobs:
   windows-build:
     needs: packer-build
     if: always() && needs.packer-build.result != 'cancelled'
-    runs-on: [self-hosted, packer]
+    runs-on: lab
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
