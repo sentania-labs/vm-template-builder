@@ -20,9 +20,8 @@ source "vsphere-iso" "windows11-pro-bare" {
 
   vcenter_server = var.vsphere_server
   cluster        = var.vsphere_cluster
-  # Optional: pin the build VM to one host. Empty lets DRS place it. Needed
-  # while some cluster hosts cannot reach the NFS datastore that holds the
-  # content library ISOs ("Invalid configuration for device '0'" on mount).
+  # Optional: pin the build VM to one host. Empty (the default) lets DRS place
+  # it; the NFS ISO problem is handled by windows_iso_datastore_path instead.
   host                = var.vsphere_host
   username            = var.vsphere_username
   password            = var.vsphere_password

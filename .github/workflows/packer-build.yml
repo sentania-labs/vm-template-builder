@@ -79,8 +79,10 @@ jobs:
         run: "rm -rf $GITHUB_WORKSPACE/*"
 
   windows11-build:
-    needs: packer-build
-    if: always() && needs.packer-build.result != 'cancelled'
+    # After windows-build, not beside it: two Windows builds at once on the mgmt
+    # cluster. Not on pull requests: the build replaces the shared library item.
+    needs: windows-build
+    if: always() && needs.windows-build.result != 'cancelled' && github.event_name != 'pull_request'
     runs-on: lab
     steps:
       - name: Checkout Repository
