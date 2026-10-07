@@ -7,7 +7,7 @@ Technology choices for `vm-template-builder`. Treat these as defaults
 |-----------|--------|
 | Build tool | Packer (HashiCorp) |
 | vSphere builder | `hashicorp/vsphere` plugin (`vsphere-iso` source) |
-| Guest OS | Ubuntu 22.04 / 24.04 LTS; Windows Server 2025 |
+| Guest OS | Ubuntu 22.04 / 24.04 LTS; Windows Server 2022 / 2025 |
 | First-boot config | cloud-init (Linux); cloudbase-init (Windows cloudbase-init variant); none (bare Windows) |
 | Unattended Windows install | autounattend.xml served via CD or HTTP during boot |
 | Windows provisioner transport | WinRM. Must be enabled during OS install via autounattend.xml so Packer can connect post-boot. Firewall rules, service config, and auth mode are template-author's call; the hard requirement is that WinRM is reachable before the first provisioner step runs. Packer does not use SSH on Windows. |

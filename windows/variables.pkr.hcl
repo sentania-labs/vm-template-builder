@@ -87,6 +87,12 @@ variable "windows_remastered_iso_filename" {
   default     = ""
 }
 
+variable "windows2022_remastered_iso_filename" {
+  type        = string
+  description = "Filename of the remastered Win2022 evaluation ISO inside the server2022-remastered content library item."
+  default     = "server2022-remastered.iso"
+}
+
 variable "windows_tools_iso_path" {
   type        = string
   description = "Full datastore path to the VMware Tools ISO served by every ESXi host."
@@ -97,6 +103,12 @@ variable "windows_product_key" {
   type        = string
   description = "Microsoft-published GVLK for the target edition."
   default     = "TVRH6-WHNXV-R9WG3-9XRFY-MY832"
+}
+
+variable "windows2022_product_key" {
+  type        = string
+  description = "Microsoft-published KMS client key (GVLK) for Server 2022 Standard. Applied after install by setup/15-set-edition.ps1, not by autounattend (eval media rejects it at setup time)."
+  default     = "VDYBN-27WPP-V4HQT-9VMD4-VMK7H"
 }
 
 variable "windows_image_name" {
