@@ -16,6 +16,13 @@ windows_tools_iso_path          = "[] /vmimages/tools-isoimages/windows.iso"
 windows_product_key = "TVRH6-WHNXV-R9WG3-9XRFY-MY832"
 windows_image_name  = "Windows Server 2025 SERVERSTANDARD"
 
+# Server 2022: evaluation ISO (SERVER_EVAL_x64FRE_en-us.iso) remastered with
+# efisys_noprompt.bin, library item "server2022-remastered". Installs
+# ServerStandardEval; setup/15-set-edition.ps1 converts it to ServerStandard
+# with the Microsoft-published GVLK below.
+windows2022_remastered_iso_filename = "server2022-remastered.iso"
+windows2022_product_key             = "VDYBN-27WPP-V4HQT-9VMD4-VMK7H"
+
 organization_name = "Sentania Lab"
 timezone          = "Eastern Standard Time"
 

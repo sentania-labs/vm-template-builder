@@ -12,7 +12,7 @@ on:
   workflow_dispatch:    # Allows manual triggering via the GitHub Actions UI
     inputs:
       only:
-        description: "What to build: everything, ubuntu/ only, every linux/ source, or one linux/ source"
+        description: "What to build: everything, ubuntu/ only, every linux/ source, one linux/ source, or the windows/ Server sources"
         type: choice
         default: everything
         options:
@@ -25,10 +25,13 @@ on:
           - rhel8
           - rhel9
           - rhel10
+          - windows-all
+          - windows2025-bare
+          - windows2022-bare
 
 jobs:
   packer-build:
-    # Skipped when a manual run asks for linux/ sources only.
+    # Runs on a manual run only for everything or ubuntu.
     if: github.event_name != 'workflow_dispatch' || inputs.only == 'everything' || inputs.only == 'ubuntu'
     runs-on: lab
     steps:
@@ -63,8 +66,10 @@ jobs:
         run: "rm -rf $GITHUB_WORKSPACE/*"
 
   windows-build:
+    # A manual run can build both Server sources (windows-all) or one of them,
+    # skipping Ubuntu, Windows 11 and linux/.
     needs: packer-build
-    if: always() && needs.packer-build.result != 'cancelled' && (github.event_name != 'workflow_dispatch' || inputs.only == 'everything')
+    if: always() && needs.packer-build.result != 'cancelled' && (github.event_name != 'workflow_dispatch' || inputs.only == 'everything' || startsWith(inputs.only, 'windows'))
     runs-on: lab
     steps:
       - name: Checkout Repository
@@ -80,8 +85,12 @@ jobs:
           VCENTER_USERNAME: ${{ vars.VCENTER_USERNAME }}
           VCENTER_PASSWORD: ${{ secrets.VCENTER_PASSWORD }}
           VCENTER_SERVER: ${{ vars.VCENTER_SERVER }}
+          ONLY_ARG: ${{ (github.event_name == 'workflow_dispatch' && inputs.only != 'everything' && inputs.only != 'windows-all') && format('-only=vsphere-iso.{0}', inputs.only) || '' }}
         run: |
-          packer build -force -parallel-builds=1 \
+          # ONLY_ARG is empty (all sources) or -only=vsphere-iso.<source>;
+          # left unquoted on purpose so an empty value adds no argument.
+          # shellcheck disable=SC2086
+          packer build -force -parallel-builds=1 ${ONLY_ARG} \
             -var "vsphere_username=${VCENTER_USERNAME}" \
             -var "vsphere_password=${VCENTER_PASSWORD}" \
             -var "vsphere_server=${VCENTER_SERVER}" \
@@ -141,7 +150,7 @@ jobs:
     needs: windows11-build
     # !cancelled() rather than always(): a cancelled run must not start the
     # queued legs, each of which replaces a library item.
-    if: ${{ !cancelled() && needs.windows11-build.result != 'cancelled' && github.event_name != 'pull_request' && !(github.event_name == 'workflow_dispatch' && inputs.only == 'ubuntu') }}
+    if: ${{ !cancelled() && needs.windows11-build.result != 'cancelled' && github.event_name != 'pull_request' && !(github.event_name == 'workflow_dispatch' && (inputs.only == 'ubuntu' || startsWith(inputs.only, 'windows'))) }}
     runs-on: lab
     strategy:
       fail-fast: false

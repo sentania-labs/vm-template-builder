@@ -5,6 +5,18 @@
       <ComputerName>*</ComputerName>
       <TimeZone>Eastern Standard Time</TimeZone>
     </component>
+    <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <RunSynchronous>
+        <!-- The build starts sysprep through this scheduled task (see
+             sysprep_shutdown_command in windows.pkr.hcl); remove it so deployed
+             VMs do not carry it. -->
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Path>schtasks.exe /Delete /TN packer-sysprep /F</Path>
+          <Description>Remove the build's sysprep task</Description>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+    </component>
   </settings>
 
   <settings pass="oobeSystem">

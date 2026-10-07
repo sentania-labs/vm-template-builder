@@ -80,3 +80,57 @@ When Scott manually selected the CDROM from the Boot Manager the second time aro
 - `==> vsphere-iso.windows2025-bare: Waiting for WinRM to become available...` should clear within a minute or two instead of timing out.
 - If WinRM still times out, the diagnostic signal is on the VM's C: drive: `C:\Windows\Temp\bootstrap.log`, `vmtools-attempted.txt`, `vmtools-msi.log`, `bootstrap-done.txt`. Mount the VM's disk or console in and pull those before destroying.
 - cbinit is now excluded from the build; CI should no longer report the cbinit IP-timeout failure.
+
+---
+
+## 2026-10-07: windows2022-bare added; evaluation media converted to Standard at build time
+
+**Context:** Server 2022 Standard retail/volume media is not on hand, so `windows2022-bare` installs from the Microsoft evaluation ISO (`SERVER_EVAL_x64FRE_en-us.iso`), remastered with `efisys_noprompt.bin` the same way as the 2025 media (see the 2026-04-23 entry) and staged as content library item `server2022-remastered`.
+
+**Why the 2022 autounattend carries no product key:** evaluation media installs the `ServerStandardEval` edition, and its setup rejects a Standard GVLK in `UserData/ProductKey`. The 2025 answer file keeps its GVLK; the 2022 answer file (`autounattend/autounattend-2022.xml`) is otherwise a copy with only the image name changed to `Windows Server 2022 SERVERSTANDARD` (Desktop Experience).
+
+**Why the DISM step:** an eval install expires and will not activate against the lab KMS. `setup/15-set-edition.ps1` converts it in place with `DISM /online /Set-Edition:ServerStandard /ProductKey:VDYBN-27WPP-V4HQT-9VMD4-VMK7H /AcceptEula /NoRestart` (Microsoft's published KMS client key for Server 2022 Standard). Exit code 3010 (reboot required) is treated as success.
+
+**Sequencing (windows.pkr.hcl, `only = ["vsphere-iso.windows2022-bare"]`):** after `10-install-vmtools.ps1` and its reboot, so no reboot is pending when DISM runs; then a `windows-restart` with a 60 minute timeout (the edition change finishes during boot and can take several restarts); then the same script with `EDITION_VERIFY_ONLY=1`, which fails the build if DISM does not report `ServerStandard`. All of this happens before the Windows Update passes, so updates land on the final edition. The script runs as an elevated scheduled task (`elevated_user`, like the update step) to avoid remote-session restrictions on DISM servicing. It is idempotent: if the edition is already `ServerStandard` it does nothing.
+
+**vmxnet3 / pvscsi:** Server 2022 media lacks both drivers, same as 2025. The same mechanism applies unchanged: pvscsi from the Tools ISO via WindowsPE `DriverPaths` (`E:\Program Files\VMware\VMware Tools\Drivers\pvscsi\Win8\amd64`), vmxnet3 via the VMware Tools install at first logon.
+
+**Not yet proven:** no build has run. Watch the DISM step duration and the post-change reboot in the first CI run.
+
+## 2026-10-07 (later) - windows2025-bare was Evaluation edition too
+
+A deployed windows2025-bare VM (mssqldemo3, lab-admin check 2:50 PM) reads
+`ServerStandardEval`, "Windows Server 2025 Standard Evaluation", no KMS, about 40
+days of evaluation left. The 2025 media is the evaluation ISO as well; the
+Standard GVLK in autounattend.xml installs on it without complaint but leaves the
+edition as Eval. The three edition steps added for 2022 (15-set-edition.ps1,
+restart, verify) now run for both sources, with the key chosen per source
+(`source.name`). Scott 2026-10-07: "yes rebuild the iso and trigger an updated
+image build." Deployed 2025 VMs were converted in place by lab-admin with the same
+DISM command.
+
+## 2026-10-07 (evening) - windows2022-bare failed at sysprep: run sysprep from a scheduled task
+
+**Symptom:** First real windows2022-bare build (run 37677411926) got through
+install, the edition switch, updates and `80-cleanup.ps1`, then failed after
+1 h 33 min: `unknown error Post "http://172.27.8.250:5985/wsman": dial tcp
+172.27.8.250:5985: connect: no route to host`. Packer destroyed the VM.
+
+**Cause:** `90-sysprep.ps1` ran sysprep as a WinRM provisioner and slept 900 s
+waiting for the power-off. Generalize removes the NIC and then powers the VM
+off, so the WinRM session ends in a transport error, which Packer reports as a
+failed provisioner (`valid_exit_codes` only covers exit codes). Sysprep started
+from a WinRM shell can also be killed with the shell mid-generalize, which is
+what failed the first windows11 builds on 2026-10-01.
+
+**Fix:** same mechanism as windows11/. Both sources set `shutdown_command` to
+create and run a SYSTEM scheduled task `packer-sysprep` that runs sysprep; the
+task outlives the session and Packer only waits for the power-off.
+`sysprep/unattend-bare.xml` deletes the task in the specialize pass.
+`90-sysprep.ps1` is gone.
+
+**Side fix:** `80-cleanup.ps1` wiped all of `C:\Windows\Temp`, including Packer's
+`packer-ps-env-vars-*.ps1`. Packer dot-sources that file when it deletes the
+uploaded script afterwards, so that call printed a `CommandNotFoundException`
+(cosmetic, the build continued). Cleanup now leaves `packer-*` and
+`script-*.ps1` for Packer to remove itself.
