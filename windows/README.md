@@ -18,9 +18,9 @@ below). Keep them in lockstep.
 | | Server 2025 | Server 2022 |
 |---|---|---|
 | Edition (final) | Standard, Desktop Experience | Standard, Desktop Experience |
-| Media | `server2025-remastered` content library item | `server2022-remastered` content library item: Microsoft **evaluation** ISO (`SERVER_EVAL_x64FRE_en-us.iso`) remastered with `efisys_noprompt.bin` |
+| Media | `server2025-remastered` content library item: Microsoft **evaluation** ISO remastered with `efisys_noprompt.bin` | `server2022-remastered` content library item: Microsoft **evaluation** ISO (`SERVER_EVAL_x64FRE_en-us.iso`) remastered with `efisys_noprompt.bin` |
 | Answer file | `autounattend/autounattend.xml` | `autounattend/autounattend-2022.xml` (published on the CD as `autounattend.xml`) |
-| Image selected | `/IMAGE/NAME` = `Windows Server 2025 SERVERSTANDARD` | `/IMAGE/NAME` = `Windows Server 2022 SERVERSTANDARD` (installs `ServerStandardEval`) |
+| Image selected | `/IMAGE/NAME` = `Windows Server 2025 SERVERSTANDARD` (installs `ServerStandardEval`; the GVLK in the answer file does not change that) | `/IMAGE/NAME` = `Windows Server 2022 SERVERSTANDARD` (installs `ServerStandardEval`) |
 | GVLK | `TVRH6-WHNXV-R9WG3-9XRFY-MY832`, baked into the autounattend | `VDYBN-27WPP-V4HQT-9VMD4-VMK7H`, applied after install by `setup/15-set-edition.ps1` (`DISM /Set-Edition:ServerStandard`); no key in the autounattend |
 | `guest_os_type` | `windows2019srv_64Guest` | `windows2019srvNext_64Guest` |
 
@@ -52,7 +52,7 @@ below). Keep them in lockstep.
 2. `autounattend/autounattend.xml` drives unattended install, creates the
    accounts, and enables WinRM in the OOBE FirstLogonCommands.
 3. Provisioners run (see `windows.pkr.hcl` for the ordered chain): install
-   VMware Tools → reboot → (2022 only) convert evaluation to Standard
+   VMware Tools, reboot, convert evaluation to Standard (both sources, since 2026-10-07)
    with DISM → reboot → verify edition → import CA → apply updates → reboot → apply
    updates → reboot → (cbinit only) install + configure Cloudbase-Init →
    upload variant sysprep unattend → cleanup → sysprep `/generalize /oobe

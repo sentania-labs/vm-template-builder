@@ -96,3 +96,15 @@ When Scott manually selected the CDROM from the Boot Manager the second time aro
 **vmxnet3 / pvscsi:** Server 2022 media lacks both drivers, same as 2025. The same mechanism applies unchanged: pvscsi from the Tools ISO via WindowsPE `DriverPaths` (`E:\Program Files\VMware\VMware Tools\Drivers\pvscsi\Win8\amd64`), vmxnet3 via the VMware Tools install at first logon.
 
 **Not yet proven:** no build has run. Watch the DISM step duration and the post-change reboot in the first CI run.
+
+## 2026-10-07 (later) - windows2025-bare was Evaluation edition too
+
+A deployed windows2025-bare VM (mssqldemo3, lab-admin check 2:50 PM) reads
+`ServerStandardEval`, "Windows Server 2025 Standard Evaluation", no KMS, about 40
+days of evaluation left. The 2025 media is the evaluation ISO as well; the
+Standard GVLK in autounattend.xml installs on it without complaint but leaves the
+edition as Eval. The three edition steps added for 2022 (15-set-edition.ps1,
+restart, verify) now run for both sources, with the key chosen per source
+(`source.name`). Scott 2026-10-07: "yes rebuild the iso and trigger an updated
+image build." Deployed 2025 VMs were converted in place by lab-admin with the same
+DISM command.

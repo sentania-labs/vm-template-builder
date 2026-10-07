@@ -164,28 +164,28 @@ build {
     restart_timeout = "30m"
   }
 
-  # windows2022-bare only: the 2022 media is the evaluation ISO. Convert
-  # ServerStandardEval to ServerStandard with the KMS client key, reboot to
-  # complete the edition change, then assert it took. Runs before updates so
-  # they are applied to the final edition. See NOTES.md 2026-10-07.
+  # Both sources build from evaluation media, so setup installs
+  # ServerStandardEval. Convert to ServerStandard with the edition's KMS
+  # client key, reboot to complete the change, then assert it took. Runs
+  # before updates so they land on the final edition. 2022 from the start
+  # (2026-10-07); 2025 added the same day after a deployed windows2025-bare
+  # VM read ServerStandardEval (the GVLK in its answer file installs on eval
+  # media but does not change the edition). See NOTES.md 2026-10-07.
   provisioner "powershell" {
-    only              = ["vsphere-iso.windows2022-bare"]
     script            = "./setup/15-set-edition.ps1"
     elevated_user     = "labuser"
     elevated_password = "VMware123!VMware123!"
     environment_vars = [
       "TARGET_EDITION=ServerStandard",
-      "PRODUCT_KEY=${var.windows2022_product_key}",
+      "PRODUCT_KEY=${source.name == "windows2025-bare" ? var.windows_product_key : var.windows2022_product_key}",
     ]
   }
 
   provisioner "windows-restart" {
-    only            = ["vsphere-iso.windows2022-bare"]
     restart_timeout = "60m"
   }
 
   provisioner "powershell" {
-    only              = ["vsphere-iso.windows2022-bare"]
     script            = "./setup/15-set-edition.ps1"
     elevated_user     = "labuser"
     elevated_password = "VMware123!VMware123!"
