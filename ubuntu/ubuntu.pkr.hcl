@@ -7,6 +7,19 @@ packer {
   }
 }
 
+locals {
+  # Content library path of each source's ISO, or the datastore override from
+  # iso_datastore_paths (same escape hatch as linux/ and windows11/).
+  iso_items = {
+    ubuntu22 = "ubuntu-22.04.5-live-server-amd64"
+    ubuntu24 = "ubuntu-24.04.3-live-server-amd64"
+  }
+  iso_path = {
+    for name, item in local.iso_items :
+    name => lookup(var.iso_datastore_paths, name, "") != "" ? var.iso_datastore_paths[name] : "${var.content_library_destination}/${item}/${item}.iso"
+  }
+}
+
 source "vsphere-iso" "ubuntu22" {
 
   vcenter_server        = var.vsphere_server
@@ -30,7 +43,7 @@ source "vsphere-iso" "ubuntu22" {
   RAM_reserve_all       = true
   disk_controller_type  = ["pvscsi"]
   guest_os_type         = "ubuntu64Guest"
-  iso_paths             = ["${var.content_library_destination}/ubuntu-22.04.5-live-server-amd64/ubuntu-22.04.5-live-server-amd64.iso"]
+  iso_paths             = [local.iso_path["ubuntu22"]]
   cd_content        = {
     "/meta-data" = file("${var.cloudinit_metadata}")
     "/user-data" = file("${var.cloudinit_userdata}")
@@ -89,7 +102,7 @@ source "vsphere-iso" "ubuntu24" {
   RAM_reserve_all       = true
   disk_controller_type  = ["pvscsi"]
   guest_os_type         = "ubuntu64Guest"
-  iso_paths             = ["${var.content_library_destination}/ubuntu-24.04.3-live-server-amd64/ubuntu-24.04.3-live-server-amd64.iso"]
+  iso_paths             = [local.iso_path["ubuntu24"]]
   cd_content        = {
     "/meta-data" = file("${var.cloudinit_metadata}")
     "/user-data" = file("${var.cloudinit_userdata}")
