@@ -43,7 +43,8 @@ Same contract as `ubuntu24` (accounts copied from `ubuntu/http/user-data`):
   down cleanly. Alpine also gets the guestinfo, deploypkg, timesync and
   vmbackup plugins (separate packages there).
 - sshd enabled, password and key login.
-- DHCP on the first NIC at every boot. Hostname is `localhost`; the deploy
+- DHCP on the first NIC at every boot. Hostname is `localhost` (Alpine's
+  `/etc/hosts` line is reset to match); the deploy
   script sets the real name and address.
 - IPv6 off (kernel `ipv6.disable=1` on EL, sysctl on Alpine), as on Ubuntu.
 - The lab Root CA (`files/sentania Lab Root 2.crt`) in the system trust store.
@@ -81,8 +82,11 @@ not a requirement.
   reach a runner pod's ephemeral port. Ubuntu does the same with its cidata CD.
 - EL boot: at the GRUB menu Packer selects "Install ...", appends
   `inst.text inst.ks=hd:LABEL=OEMDRV:/ks.cfg` to the kernel line and boots.
-  The CD is labelled `OEMDRV`, which Anaconda also searches on its own, so a
-  missed keystroke still ends in an unattended (graphical) install.
+  The CD is labelled `OEMDRV`, which Anaconda also searches on its own: if
+  the whole keystroke sequence misses, the default menu entry first runs a
+  media check of the DVD (slow) and then still installs unattended from
+  `ks.cfg`. A sequence that lands only partly can stop the boot instead;
+  that shows on the VM console.
 - Alpine boot: Packer logs in as root on the live console and runs
   `bootstrap.sh` from the second CD (see `alpine.md`).
 - After the install reboots, Packer waits for VMware Tools to report an IP,
@@ -127,7 +131,8 @@ packer build -force -only='el.vsphere-iso.rhel9' \
   -var vsphere_username=... -var vsphere_password=... .
 ```
 
-Source names for `-only`: `el.vsphere-iso.{rocky9,centos-stream9,rhel8,rhel9,rhel10}`
+Always pass `-only` (or `-parallel-builds=1`): a bare `packer build .` starts
+all six VMs at once. Source names for `-only`: `el.vsphere-iso.{rocky9,centos-stream9,rhel8,rhel9,rhel10}`
 and `alpine.vsphere-iso.alpine324`.
 
 ## Files

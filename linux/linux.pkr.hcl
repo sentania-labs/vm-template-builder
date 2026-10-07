@@ -2,7 +2,7 @@ packer {
   required_version = ">= 1.11.0, < 1.12.0"
   required_plugins {
     vsphere = {
-      version = ">= 1.4.2"
+      version = "~> 2.5"
       source  = "github.com/hashicorp/vsphere"
     }
   }
@@ -33,12 +33,14 @@ locals {
   # Anaconda: pick "Install ..." (one up from the default "Test this media &
   # install"), edit it, append text mode and the kickstart location to the
   # kernel line, boot with Ctrl-X. Same menu layout on RHEL 8/9/10, Rocky 9
-  # and CentOS Stream 9 under UEFI. If the keystrokes miss, Anaconda still
-  # finds ks.cfg on the OEMDRV-labelled CD by itself (graphical, but unattended).
+  # and CentOS Stream 9 under UEFI (lorax grub2-efi.cfg: default entry 1,
+  # timeout 60). If the whole sequence misses, the default entry runs a media
+  # check of the DVD and then still installs from ks.cfg on the OEMDRV CD;
+  # a sequence that lands partly can stop the boot instead.
   el_boot_command = [
-    "<up>",
-    "e",
-    "<down><down><end>",
+    "<up><wait>",
+    "e<wait>",
+    "<down><down><end><wait>",
     " inst.text inst.ks=hd:LABEL=OEMDRV:/ks.cfg",
     "<leftCtrlOn>x<leftCtrlOff>",
   ]

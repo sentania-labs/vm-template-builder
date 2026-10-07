@@ -137,7 +137,9 @@ jobs:
     # requests: each build replaces a shared library item. A manual run can
     # pick one source (or all linux/ sources) and skip Ubuntu and Windows.
     needs: windows11-build
-    if: always() && needs.windows11-build.result != 'cancelled' && github.event_name != 'pull_request'
+    # !cancelled() rather than always(): a cancelled run must not start the
+    # queued legs, each of which replaces a library item.
+    if: ${{ !cancelled() && needs.windows11-build.result != 'cancelled' && github.event_name != 'pull_request' }}
     runs-on: lab
     strategy:
       fail-fast: false

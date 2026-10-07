@@ -18,7 +18,8 @@ Decisions:
   runner pod's ephemeral HTTP port. Ubuntu already uses a cidata CD for the
   same reason. EL uses the `OEMDRV` label with an explicit
   `inst.ks=hd:LABEL=OEMDRV:/ks.cfg`; Anaconda also auto-loads `ks.cfg` from an
-  `OEMDRV` volume, which covers a missed boot keystroke.
+  `OEMDRV` volume, so a fully missed keystroke sequence still installs (after
+  the default entry's media check); a partly landed one can stop the boot.
 - **UEFI everywhere, no Secure Boot.** All six ISOs boot UEFI and accept
   their parameters unattended. Secure Boot would add nothing to a bare
   template and complicates third-party kernel modules later.
@@ -61,6 +62,14 @@ Open questions:
   Alpine boot timing and `setup-alpine` answer coverage on 3.24, and whether
   `rhel10_64Guest` / `other6xLinux64Guest` / `centos9_64Guest` are accepted by
   the mgmt vCenter (all expected on vSphere 9).
+- **Stale IP after the install reboot (watch on rhel8 first).** Anaconda's
+  installer runs vmtoolsd, so Packer records the installer's DHCP address and
+  keeps using it. If the installed system's NetworkManager gets a different
+  lease (RHEL 8 installer uses dhclient, NM sends a MAC-based client-id), the
+  build waits out `ssh_timeout` (45m). Fix if seen: DHCP reservation or match
+  the client-id in `%post`.
+- **Plugin pin:** linux/ pins the vsphere plugin to `~> 2.5` (validated on
+  2.5.0); ubuntu/ and windows/ still float.
 - **RHEL 10 and EVC:** RHEL 10 requires x86-64-v3. Confirm the mgmt cluster's
   EVC mode (if any) exposes AVX2 before the first `rhel10` build.
 - **Install RAM:** 2 GB matches Ubuntu and meets the RHEL text-install

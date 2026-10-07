@@ -17,5 +17,7 @@ rm -f /etc/ssh/ssh_host_*
 
 echo '> Setting hostname to localhost ...'
 echo localhost > /etc/hostname
+# setup-alpine wrote the build hostname into the 127.0.0.1 line.
+sed -i 's/^127\.0\.0\.1.*/127.0.0.1\tlocalhost.localdomain localhost/' /etc/hosts
 
 exit 0
