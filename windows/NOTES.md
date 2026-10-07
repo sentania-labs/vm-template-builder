@@ -108,3 +108,29 @@ restart, verify) now run for both sources, with the key chosen per source
 (`source.name`). Scott 2026-10-07: "yes rebuild the iso and trigger an updated
 image build." Deployed 2025 VMs were converted in place by lab-admin with the same
 DISM command.
+
+## 2026-10-07 (evening) - windows2022-bare failed at sysprep: run sysprep from a scheduled task
+
+**Symptom:** First real windows2022-bare build (run 37677411926) got through
+install, the edition switch, updates and `80-cleanup.ps1`, then failed after
+1 h 33 min: `unknown error Post "http://172.27.8.250:5985/wsman": dial tcp
+172.27.8.250:5985: connect: no route to host`. Packer destroyed the VM.
+
+**Cause:** `90-sysprep.ps1` ran sysprep as a WinRM provisioner and slept 900 s
+waiting for the power-off. Generalize removes the NIC and then powers the VM
+off, so the WinRM session ends in a transport error, which Packer reports as a
+failed provisioner (`valid_exit_codes` only covers exit codes). Sysprep started
+from a WinRM shell can also be killed with the shell mid-generalize, which is
+what failed the first windows11 builds on 2026-10-01.
+
+**Fix:** same mechanism as windows11/. Both sources set `shutdown_command` to
+create and run a SYSTEM scheduled task `packer-sysprep` that runs sysprep; the
+task outlives the session and Packer only waits for the power-off.
+`sysprep/unattend-bare.xml` deletes the task in the specialize pass.
+`90-sysprep.ps1` is gone.
+
+**Side fix:** `80-cleanup.ps1` wiped all of `C:\Windows\Temp`, including Packer's
+`packer-ps-env-vars-*.ps1`. Packer dot-sources that file when it deletes the
+uploaded script afterwards, so that call printed a `CommandNotFoundException`
+(cosmetic, the build continued). Cleanup now leaves `packer-*` and
+`script-*.ps1` for Packer to remove itself.

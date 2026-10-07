@@ -19,7 +19,8 @@ Standard Evaluation despite the key in the answer file).
 
 ## First-boot behavior
 None. Sysprep completes with `unattend-bare.xml`, which re-seals the
-local accounts and skips OOBE. The VM boots to the login screen.
+local accounts, skips OOBE and deletes the build's `packer-sysprep`
+scheduled task. The VM boots to the login screen.
 
 ## Lab assumptions
 - Target cluster: `vcf-lab-mgmt-cl01`

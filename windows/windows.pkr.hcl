@@ -8,6 +8,18 @@ packer {
   }
 }
 
+# Sysprep runs from a SYSTEM scheduled task started by the shutdown command,
+# not as a provisioner. Started over WinRM, sysprep is a child of the WinRM
+# shell: generalize removes the NIC, the session drops and Packer fails the
+# provisioner ("dial tcp ...:5985: connect: no route to host", windows2022-bare
+# run 37677411926 on 2026-10-07), and Windows can kill sysprep with the shell
+# mid-generalize (the windows11 builds on 2026-10-01). The task outlives the
+# session; Packer only waits for the power-off. sysprep/unattend-bare.xml
+# deletes the task in the specialize pass. Same mechanism as windows11/.
+locals {
+  sysprep_shutdown_command = "schtasks /Create /F /TN packer-sysprep /RU SYSTEM /SC ONCE /ST 00:00 /TR \"C:\\Windows\\System32\\Sysprep\\sysprep.exe /generalize /oobe /shutdown /unattend:C:\\Windows\\Temp\\unattend.xml\" && schtasks /Run /TN packer-sysprep"
+}
+
 source "vsphere-iso" "windows2025-bare" {
 
   vcenter_server      = var.vsphere_server
@@ -66,9 +78,10 @@ source "vsphere-iso" "windows2025-bare" {
   winrm_use_ssl  = false
   winrm_insecure = true
 
-  boot_order        = "disk,cdrom"
-  boot_wait         = "2s"
-  shutdown_timeout  = "30m"
+  boot_order       = "disk,cdrom"
+  boot_wait        = "2s"
+  shutdown_timeout = "30m"
+  shutdown_command = local.sysprep_shutdown_command
 
   configuration_parameters = {
     "disk.EnableUUID" = "true"
@@ -140,6 +153,7 @@ source "vsphere-iso" "windows2022-bare" {
   boot_order       = "disk,cdrom"
   boot_wait        = "2s"
   shutdown_timeout = "30m"
+  shutdown_command = local.sysprep_shutdown_command
 
   configuration_parameters = {
     "disk.EnableUUID" = "true"
@@ -235,10 +249,5 @@ build {
 
   provisioner "powershell" {
     script = "./setup/80-cleanup.ps1"
-  }
-
-  provisioner "powershell" {
-    script           = "./setup/90-sysprep.ps1"
-    valid_exit_codes = [0, 2300218]
   }
 }

@@ -16,7 +16,11 @@ Remove-Item -Path 'C:\Windows\SoftwareDistribution\Download\*' -Recurse -Force -
 
 Write-Host "Clearing user + system temp..."
 Remove-Item -Path "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item -Path 'C:\Windows\Temp\*' -Recurse -Force -ErrorAction SilentlyContinue -Exclude 'sentania-lab-root-2.crt','unattend.xml'
+# Keep Packer's own files (packer-*, script-*.ps1). When Packer removes this
+# script afterwards it dot-sources its packer-ps-env-vars-*.ps1 from here, and
+# that call fails if the file is gone (CommandNotFoundException, windows2022-bare
+# 2026-10-07). Packer deletes its own files once this script returns.
+Remove-Item -Path 'C:\Windows\Temp\*' -Recurse -Force -ErrorAction SilentlyContinue -Exclude 'sentania-lab-root-2.crt','unattend.xml','packer-*','script-*.ps1'
 
 Write-Host "Running DISM component cleanup..."
 Start-Process -FilePath dism.exe -ArgumentList '/online','/Cleanup-Image','/StartComponentCleanup','/ResetBase' -Wait -NoNewWindow

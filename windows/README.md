@@ -55,9 +55,12 @@ below). Keep them in lockstep.
    VMware Tools, reboot, convert evaluation to Standard (both sources, since 2026-10-07)
    with DISM → reboot → verify edition → import CA → apply updates → reboot → apply
    updates → reboot → (cbinit only) install + configure Cloudbase-Init →
-   upload variant sysprep unattend → cleanup → sysprep `/generalize /oobe
-   /shutdown`.
-4. Packer converts the powered-off VM to a template and publishes an OVF
+   upload variant sysprep unattend → cleanup.
+4. Packer's `shutdown_command` starts sysprep `/generalize /oobe /shutdown`
+   from a SYSTEM scheduled task (`packer-sysprep`), not over WinRM, and waits
+   for the power-off. The specialize pass of `sysprep/unattend-bare.xml`
+   deletes the task on first boot of a deployed VM.
+5. Packer converts the powered-off VM to a template and publishes an OVF
    to the content library.
 
 ## Lab assumptions
@@ -78,3 +81,8 @@ Built by the `windows-build` job in
 completes (to avoid content-library OVF-import races). It runs
 `packer build .` in `windows/`, so every source in the build block (2025
 and 2022) is built one after the other (`-parallel-builds=1`).
+
+A manual run (`workflow_dispatch`) can pick `only: windows-all` (both Server
+sources), `windows2025-bare` or `windows2022-bare`. That runs just this job
+(with `-only=vsphere-iso.<source>` for a single source) and skips Ubuntu,
+Windows 11 and linux/.
