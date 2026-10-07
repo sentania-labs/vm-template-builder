@@ -28,6 +28,8 @@ Registered as the `vm-template-builder` provider. Workspace path:
 ## Layout
 
 - `ubuntu/` — Ubuntu LTS sources (Packer HCL, cloud-init http data).
+- `linux/` - RHEL, Rocky, CentOS Stream, Alpine sources (kickstart,
+  setup-alpine answer files on a Packer CD).
 - `windows/` — Windows Server 2025 sources, autounattend, drivers.
 - `files/` — shared assets (internal CA cert).
 - `scripts/` — content-library sync utilities.

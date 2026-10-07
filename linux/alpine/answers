@@ -1,0 +1,32 @@
+# setup-alpine answer file for the alpine324 source (setup-alpine -e -f).
+# Runs in the live (RAM) system. DISKOPTS=none: bootstrap.sh adds packages
+# and labuser first, then calls setup-disk itself so they land on disk.
+
+KEYMAPOPTS="us us"
+HOSTNAMEOPTS="alpine"
+DEVDOPTS="mdev"
+
+INTERFACESOPTS="auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet dhcp
+"
+
+TIMEZONEOPTS="UTC"
+PROXYOPTS="none"
+
+# First mirror (the CDN), main and community repos. open-vm-tools is in
+# community.
+APKREPOSOPTS="-1 -c"
+
+# labuser is created by bootstrap.sh (needs sudo and the lab password hash,
+# which setup-user does not do).
+USEROPTS="none"
+
+SSHDOPTS="openssh"
+NTPOPTS="chrony"
+
+DISKOPTS="none"
+LBUOPTS="none"
+APKCACHEOPTS="none"

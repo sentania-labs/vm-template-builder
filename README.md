@@ -1,8 +1,9 @@
 # vm-template-builder
 
-Packer-based VM image builds for Scott's homelab. Produces Ubuntu LTS
-and Windows Server 2025 templates and publishes them as OVFs to a
-vSphere content library on `vcf-lab-vcenter-mgmt.int.sentania.net`.
+Packer-based VM image builds for Scott's homelab. Produces Ubuntu LTS,
+RHEL / Rocky / CentOS Stream / Alpine and Windows templates and
+publishes them as OVFs to a vSphere content library on
+`vcf-lab-vcenter-mgmt.int.sentania.net`.
 
 ## Scope
 
@@ -12,6 +13,8 @@ configuration live elsewhere (see `lab-admin`).
 ## Layout
 
 - `ubuntu/` — Ubuntu 22.04 / 24.04 LTS sources.
+- `linux/` - RHEL 8/9/10, Rocky Linux 9, CentOS Stream 9 and Alpine 3.24
+  sources (kickstart / setup-alpine answer files; see `linux/README.md`).
 - `windows/` — Windows Server 2025 sources (`bare`; `cloudbase-init`
   variant currently parked).
 - `files/` — shared assets (internal CA cert).
@@ -28,5 +31,5 @@ gitignored vars files (see `docs/standards/secrets-policy.md`).
 
 ## More
 
-See `CLAUDE.md` for working conventions and `windows/README.md` /
-per-variant docs for image-specific details.
+See `CLAUDE.md` for working conventions and `windows/README.md`,
+`linux/README.md` / per-variant docs for image-specific details.
