@@ -10,9 +10,25 @@ on:
   schedule:
       - cron: "0 0 1 * *"  # Runs on the first day of the month at 12:00 AM UTC (adjust as needed)
   workflow_dispatch:    # Allows manual triggering via the GitHub Actions UI
+    inputs:
+      only:
+        description: "What to build: everything, every linux/ source, or one linux/ source"
+        type: choice
+        default: everything
+        options:
+          - everything
+          - linux-all
+          - rocky9
+          - centos-stream9
+          - alpine324
+          - rhel8
+          - rhel9
+          - rhel10
 
 jobs:
   packer-build:
+    # Skipped when a manual run asks for linux/ sources only.
+    if: github.event_name != 'workflow_dispatch' || inputs.only == 'everything'
     runs-on: lab
     steps:
       - name: Checkout Repository
@@ -47,7 +63,7 @@ jobs:
 
   windows-build:
     needs: packer-build
-    if: always() && needs.packer-build.result != 'cancelled'
+    if: always() && needs.packer-build.result != 'cancelled' && (github.event_name != 'workflow_dispatch' || inputs.only == 'everything')
     runs-on: lab
     steps:
       - name: Checkout Repository
@@ -82,7 +98,7 @@ jobs:
     # After windows-build, not beside it: two Windows builds at once on the mgmt
     # cluster. Not on pull requests: the build replaces the shared library item.
     needs: windows-build
-    if: always() && needs.windows-build.result != 'cancelled' && github.event_name != 'pull_request'
+    if: always() && needs.windows-build.result != 'cancelled' && github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.only == 'everything')
     runs-on: lab
     steps:
       - name: Checkout Repository
@@ -111,4 +127,51 @@ jobs:
           rm -rf ~/.cache/packer
 
       - name: Clean workspace
+        run: "rm -rf $GITHUB_WORKSPACE/*"
+
+  linux-build:
+    # linux/ family (Rocky, CentOS Stream, Alpine, RHEL 8/9/10). One matrix leg
+    # per source with fail-fast off, so a source whose ISO is not staged yet
+    # fails alone and the others still build. max-parallel 1 and the place in
+    # the chain keep it to one build at a time on the mgmt cluster. Not on pull
+    # requests: each build replaces a shared library item. A manual run can
+    # pick one source (or all linux/ sources) and skip Ubuntu and Windows.
+    needs: windows11-build
+    if: always() && needs.windows11-build.result != 'cancelled' && github.event_name != 'pull_request'
+    runs-on: lab
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJSON((github.event_name != 'workflow_dispatch' || inputs.only == 'everything' || inputs.only == 'linux-all') && '[{"build":"el","source":"rocky9"},{"build":"el","source":"centos-stream9"},{"build":"alpine","source":"alpine324"},{"build":"el","source":"rhel9"},{"build":"el","source":"rhel10"},{"build":"el","source":"rhel8"}]' || format('[{{"build":"{0}","source":"{1}"}}]', inputs.only == 'alpine324' && 'alpine' || 'el', inputs.only)) }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Run `packer init`
+        working-directory: linux
+        run: "packer init ."
+
+      - name: Build ${{ matrix.source }}
+        working-directory: linux
+        env:
+          VCENTER_USERNAME: ${{ vars.VCENTER_USERNAME }}
+          VCENTER_PASSWORD: ${{ secrets.VCENTER_PASSWORD }}
+          VCENTER_SERVER: ${{ vars.VCENTER_SERVER }}
+          ONLY: ${{ matrix.build }}.vsphere-iso.${{ matrix.source }}
+        run: |
+          packer build -force -only="${ONLY}" \
+            -var "vsphere_username=${VCENTER_USERNAME}" \
+            -var "vsphere_password=${VCENTER_PASSWORD}" \
+            -var "vsphere_server=${VCENTER_SERVER}" \
+            -var 'content_library_destination=vcf-lab-mgmt-contentlibrary' .
+
+      - name: Cleanup Packer cache
+        if: always()
+        run: |
+          rm -rf ./.packer.d
+          rm -rf ~/.cache/packer
+
+      - name: Clean workspace
+        if: always()
         run: "rm -rf $GITHUB_WORKSPACE/*"
