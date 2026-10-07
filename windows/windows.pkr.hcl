@@ -75,9 +75,81 @@ source "vsphere-iso" "windows2025-bare" {
   }
 }
 
+source "vsphere-iso" "windows2022-bare" {
+
+  vcenter_server      = var.vsphere_server
+  cluster             = var.vsphere_cluster
+  username            = var.vsphere_username
+  password            = var.vsphere_password
+  insecure_connection = "true"
+  datacenter          = var.vsphere_datacenter
+  datastore           = var.vsphere_datastore
+
+  content_library_destination {
+    destroy = var.library_vm_destroy
+    library = var.content_library_destination
+    name    = "windows2022-bare"
+    ovf     = var.ovf
+  }
+
+  CPUs                 = var.cpu_num
+  RAM                  = var.mem_size
+  RAM_reserve_all      = true
+  firmware             = "efi-secure"
+  guest_os_type        = "windows2019srvNext_64Guest"
+  disk_controller_type = ["pvscsi"]
+
+  iso_paths = [
+    "${var.content_library_destination}/server2022-remastered/${var.windows2022_remastered_iso_filename}",
+    var.windows_tools_iso_path,
+  ]
+  reattach_cdroms = 2
+  remove_cdrom    = "true"
+
+  # Same CD layout as 2025; the 2022 answer file (no product key, eval
+  # image name) is published at the CD root as autounattend.xml.
+  cd_files = [
+    "./autounattend/install-vmtools.ps1",
+    "./autounattend/init-winrm.ps1",
+  ]
+  cd_content = {
+    "autounattend.xml" = file("./autounattend/autounattend-2022.xml")
+  }
+
+  network_adapters {
+    network      = var.vsphere_network
+    network_card = "vmxnet3"
+  }
+
+  storage {
+    disk_size             = var.disk_size
+    disk_thin_provisioned = true
+  }
+
+  vm_name             = "windows2022-bare-template"
+  convert_to_template = "true"
+
+  communicator   = "winrm"
+  winrm_username = var.winrm_username
+  winrm_password = var.winrm_password
+  winrm_port     = 5985
+  winrm_timeout  = "60m"
+  winrm_use_ssl  = false
+  winrm_insecure = true
+
+  boot_order       = "disk,cdrom"
+  boot_wait        = "2s"
+  shutdown_timeout = "30m"
+
+  configuration_parameters = {
+    "disk.EnableUUID" = "true"
+  }
+}
+
 build {
   sources = [
     "source.vsphere-iso.windows2025-bare",
+    "source.vsphere-iso.windows2022-bare",
   ]
 
   provisioner "powershell" {
@@ -90,6 +162,37 @@ build {
 
   provisioner "windows-restart" {
     restart_timeout = "30m"
+  }
+
+  # windows2022-bare only: the 2022 media is the evaluation ISO. Convert
+  # ServerStandardEval to ServerStandard with the KMS client key, reboot to
+  # complete the edition change, then assert it took. Runs before updates so
+  # they are applied to the final edition. See NOTES.md 2026-10-07.
+  provisioner "powershell" {
+    only              = ["vsphere-iso.windows2022-bare"]
+    script            = "./setup/15-set-edition.ps1"
+    elevated_user     = "labuser"
+    elevated_password = "VMware123!VMware123!"
+    environment_vars = [
+      "TARGET_EDITION=ServerStandard",
+      "PRODUCT_KEY=${var.windows2022_product_key}",
+    ]
+  }
+
+  provisioner "windows-restart" {
+    only            = ["vsphere-iso.windows2022-bare"]
+    restart_timeout = "60m"
+  }
+
+  provisioner "powershell" {
+    only              = ["vsphere-iso.windows2022-bare"]
+    script            = "./setup/15-set-edition.ps1"
+    elevated_user     = "labuser"
+    elevated_password = "VMware123!VMware123!"
+    environment_vars = [
+      "TARGET_EDITION=ServerStandard",
+      "EDITION_VERIFY_ONLY=1",
+    ]
   }
 
   provisioner "file" {

@@ -51,7 +51,7 @@ A request is dispatched through the Scott² orchestrator queue
 |---|---|---|
 | `template_name` | string | Kebab-case, lowercase, ≤40 chars, regex `^[a-z0-9][a-z0-9-]{0,39}$`. Becomes the content-library item name. Must not collide with an existing item unless `replace_existing: true` is set. |
 | `os` | enum | `ubuntu` / `windows`. Selects the source family in the repo. |
-| `version` | string | OS version. For `ubuntu`: `22.04` or `24.04`. For `windows`: `2025`. New versions require a Packer source addition before they are accepted. |
+| `version` | string | OS version. For `ubuntu`: `22.04` or `24.04`. For `windows`: `2022` or `2025` (`bare` variant only for `2022`). New versions require a Packer source addition before they are accepted. |
 | `variant` | enum | OS-family-specific: ubuntu has `default` (cloud-init); windows has `cloudbase-init` or `bare`. Variant determines first-boot behavior and which Packer source is used. |
 | `tenant_workspace` | string | Workspace slug submitting the request. Must be in `capabilities.yml`'s `allowed_callers`. |
 | `rationale` | string | One sentence: why this template is needed (new template, refresh for security patches, schema bump, etc.). |
