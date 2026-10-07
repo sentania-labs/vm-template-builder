@@ -105,3 +105,13 @@ variable "boot_command" {
   description = "Ubuntu boot command"
   default = []
 }
+
+# Optional per-source override: a datastore path such as
+# "[vcf-lab-mgmt-cl01-vsan] iso/ubuntu-24.04.3-live-server-amd64.iso". Same
+# escape hatch as linux/iso_datastore_paths and windows11's
+# windows_iso_datastore_path. Empty or absent means use the library item.
+variable "iso_datastore_paths" {
+  type        = map(string)
+  description = "Per-source datastore ISO path that overrides the library item."
+  default     = {}
+}

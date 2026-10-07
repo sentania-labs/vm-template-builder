@@ -12,11 +12,12 @@ on:
   workflow_dispatch:    # Allows manual triggering via the GitHub Actions UI
     inputs:
       only:
-        description: "What to build: everything, every linux/ source, or one linux/ source"
+        description: "What to build: everything, ubuntu/ only, every linux/ source, or one linux/ source"
         type: choice
         default: everything
         options:
           - everything
+          - ubuntu
           - linux-all
           - rocky9
           - centos-stream9
@@ -28,7 +29,7 @@ on:
 jobs:
   packer-build:
     # Skipped when a manual run asks for linux/ sources only.
-    if: github.event_name != 'workflow_dispatch' || inputs.only == 'everything'
+    if: github.event_name != 'workflow_dispatch' || inputs.only == 'everything' || inputs.only == 'ubuntu'
     runs-on: lab
     steps:
       - name: Checkout Repository
@@ -135,11 +136,12 @@ jobs:
     # fails alone and the others still build. max-parallel 1 and the place in
     # the chain keep it to one build at a time on the mgmt cluster. Not on pull
     # requests: each build replaces a shared library item. A manual run can
-    # pick one source (or all linux/ sources) and skip Ubuntu and Windows.
+    # pick one source (or all linux/ sources) and skip Ubuntu and Windows; a
+    # manual run with only=ubuntu skips this job.
     needs: windows11-build
     # !cancelled() rather than always(): a cancelled run must not start the
     # queued legs, each of which replaces a library item.
-    if: ${{ !cancelled() && needs.windows11-build.result != 'cancelled' && github.event_name != 'pull_request' }}
+    if: ${{ !cancelled() && needs.windows11-build.result != 'cancelled' && github.event_name != 'pull_request' && !(github.event_name == 'workflow_dispatch' && inputs.only == 'ubuntu') }}
     runs-on: lab
     strategy:
       fail-fast: false
